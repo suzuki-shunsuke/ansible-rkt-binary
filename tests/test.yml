@@ -1,0 +1,13 @@
+---
+- hosts: all
+  pre_tasks:
+  roles:
+    - role: ansible-rkt-binary
+      rkt_binary_version: v1.28.1
+      become: yes
+  tasks:
+    - command: rkt version
+      register: result
+      changed_when: false
+    - debug:
+        var: result

@@ -1,0 +1,50 @@
+# https://github.com/rkt/rkt/blob/master/Documentation/trying-out-rkt.md#running-the-latest-rkt-binary
+- name: check whether the binary has already installed
+  stat:
+    path: "{{rkt_binary_install_dir}}/rkt-{{rkt_binary_version}}"
+  register: rgst_stat_binary
+  become: no
+- block:
+  - name: check whether the binary has already downloaded
+    stat:
+      path: "/tmp/rkt-{{rkt_binary_version}}"
+    register: rgst_stat_downloaded
+    become: no
+  - name: download and unarchive package
+    unarchive:
+      src: https://github.com/rkt/rkt/releases/download/{{rkt_binary_version}}/rkt-{{rkt_binary_version}}.tar.gz
+      dest: "/tmp"
+      keep_newer: yes
+      remote_src: yes
+    become: no
+    when: not rgst_stat_downloaded.stat.exists
+  - name: create install directory
+    file:
+      state: directory
+      dest: "{{rkt_binary_install_dir}}"
+  - name: install rkt
+    copy:
+      src: /tmp/rkt-{{rkt_binary_version}}/rkt
+      dest: "{{rkt_binary_install_dir}}/rkt-{{rkt_binary_version}}"
+      mode: 0755
+      remote_src: yes
+  - name: remove file in /tmp
+    file:
+      state: absent
+      path: "/tmp/rkt-{{rkt_binary_version}}"
+  when: not rgst_stat_binary.stat.exists
+- name: check the symbolic to the binary
+  stat:
+    path: "{{rkt_binary_install_dir}}/rkt"
+  register: rgst_rkt_link
+  become: no
+- name: remove the symbolic link
+  file:
+    state: absent
+    path: "{{rkt_binary_install_dir}}/rkt"
+  when: rgst_rkt_link.stat.exists and (not rgst_rkt_link.stat.islnk or rgst_rkt_link.stat.lnk_source != "{}/rkt-{}".format(rkt_binary_install_dir, rkt_binary_version))
+- name: create the symbolic link
+  file:
+    state: link
+    src: "{{rkt_binary_install_dir}}/rkt-{{rkt_binary_version}}"
+    dest: "{{rkt_binary_install_dir}}/rkt"

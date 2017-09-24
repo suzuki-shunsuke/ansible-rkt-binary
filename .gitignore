@@ -1,0 +1,11 @@
+# Vagrant
+.vagrant
+
+# Ansible
+*.retry
+
+# Node.js
+node_modules
+
+# common
+**/*.log
